@@ -1,9 +1,11 @@
+import javafx.util.Pair;
+
 import java.io.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * 問題がくそ。下手な英語を使うな
+ * AC. 問題の読解が難しすぎてReadforcesだった
  */
 public final class Main {
 	public static void main(String[] args) throws IOException {
@@ -11,42 +13,50 @@ public final class Main {
 		int n = in.nextInt();
 		int m = in.nextInt();
 		List<Integer> ai = new ArrayList<Integer>();
-
-		// key: Id, value: num
-		Map<Integer, Integer> map = new HashMap<Integer, Integer>();
+		Map<Integer, Integer> bj = new TreeMap<>();
+		// init
 		for(int i=1;i<=m;i++) {
-			map.put(i, 0);
+			bj.put(i, 0);
 		}
-		for (int i = 0; i < n; i++) {
+
+
+		for(int i=0;i<n;i++) {
 			int d = in.nextInt();
 			ai.add(d);
 			if(d <= m) {
-				if (map.containsKey(d)) {
-					map.put(d, map.get(d) + 1);
-				} else {
-					map.put(d, 1);
-				}
+				bj.put(d, bj.get(d) + 1);
 			}
 		}
 
-		map = MapUtil.sortByValue(map);
+		int minVal = (int)Math.floor(n/m);
 		int numRep = 0;
+
+		bj = MapUtil.sortByValue(bj); // sort by num of songs
+		int bjIdx = 0;
 		for(int i=0;i<n;i++) {
-			int d = ai.get(i);
-			if((map.containsKey(d) && Math.abs(map.get(d) - (int)map.values().toArray()[0])>= 1 ) ||
-					(d > m && !check(map) || (d > m && Math.abs((int)map.values().toArray()[0] - (int)map.values().toArray()[map.size()-1]) >= 1))) {
-				int id = (int)map.keySet().toArray()[0];
-				ai.set(i, id);
-				if(map.containsKey(d)) {
-					map.put(d, map.get(d) - 1);
-				}
-				map.put(id, map.get(id) + 1);
-				map = MapUtil.sortByValue(map);
-				numRep++;
+			int replaceFromId = ai.get(i);
+			int replaceToId = (int)bj.keySet().toArray()[bjIdx];
+			if(bj.get(replaceToId) >= minVal) {
+				bjIdx++;
 			}
+			if(bjIdx >= m) break;
+			replaceToId = (int)bj.keySet().toArray()[bjIdx];
+			if(bj.get(replaceToId) >= minVal) break; // no need more replace
+			if(replaceFromId == replaceToId) continue;
+
+			if(replaceFromId <= m && bj.get(replaceFromId) <= minVal) {
+				continue;
+			}
+
+			// replace
+			ai.set(i, replaceToId);
+			if(replaceFromId <= m)
+                bj.put(replaceFromId, bj.get(replaceFromId) - 1);
+			bj.put(replaceToId, bj.get(replaceToId) + 1);
+			numRep++;
 		}
 
-		System.out.println("" + map.values().toArray()[0] + " " + numRep);
+		System.out.println(minVal + " " + numRep);
 		for(int i=0;i<n;i++) {
 			System.out.print(ai.get(i) + " ");
 		}
@@ -61,6 +71,9 @@ public final class Main {
 	}
 }
 
+/**
+ * Refer: http://stackoverflow.com/questions/109383/sort-a-mapkey-value-by-values-java
+ */
 class MapUtil
 {
 	public static <K, V extends Comparable<? super V>> Map<K, V>
